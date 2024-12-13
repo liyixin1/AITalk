@@ -1,0 +1,12 @@
+{
+  "routerMap": [
+    {
+      "name": "ListItemPage",
+      "pageSourceFile": "src/main/ets/pages/list_item_page.ets",
+      "buildFunction": "ListItemBuilder",
+      "data": {
+        "description" : "this is ListItemPage"
+      }
+    }
+  ]
+}
