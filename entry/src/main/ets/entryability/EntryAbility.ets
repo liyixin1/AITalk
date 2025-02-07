@@ -1,11 +1,13 @@
-import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
+import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { preferenceUtil } from '../../../common/Index';
 import { dbUtil }  from '../../../common/Index'
+import { config } from '../config';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
   }
 
@@ -18,12 +20,18 @@ export default class EntryAbility extends UIAbility {
     // 初始化Preference
     preferenceUtil.init(this.context,'myStore');
     preferenceUtil.insertData('isFirstRun',true);
+    preferenceUtil.insertData('isLoggedIn',false);
     // 初始化数据库
+    dbUtil.initDB(this.context,'users');
 
+    setTimeout(async ()=>{
+      await config.initConfig();
+    },500)
+    this.context.getApplicationContext().setColorMode(config.display.theme)
     // Main window is created, set main page for this ability
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
-    windowStage.loadContent('pages/Index', (err) => {
+    windowStage.loadContent('pages/start_page', (err) => {
       if (err.code) {
         hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
         return;

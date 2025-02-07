@@ -11,6 +11,170 @@
     {
       "name": "EntryAbility_label",
       "value": "label"
+    },
+    {
+      "name": "Index_Tabs_Conversations",
+      "value": "消息"
+    },
+    {
+      "name": "Index_Tabs_Explore",
+      "value": "探索"
+    },
+    {
+      "name": "Index_Tabs_My",
+      "value": "我的"
+    },
+    {
+      "name": "Index_Title",
+      "value": "畅聊"
+    },
+    {
+      "name": "My_Model",
+      "value": "模型"
+    },
+    {
+      "name": "My_Display",
+      "value": "显示"
+    },
+    {
+      "name": "My_Talk",
+      "value": "对话"
+    },
+    {
+      "name": "My_NewModel",
+      "value": "自定义模型"
+    },
+    {
+      "name": "My_About",
+      "value": "关于"
+    },
+    {
+      "name": "My_Model_prompt",
+      "value": "选择模型并设置参数"
+    },
+    {
+      "name": "My_Display_prompt",
+      "value": "配置界面显示效果"
+    },
+    {
+      "name": "My_Talk_prompt",
+      "value": "设置对话提示及标题生成"
+    },
+    {
+      "name": "My_About_prompt",
+      "value": ""
+    },
+    {
+      "name": "My_NewModel_prompt",
+      "value": "添加自定义模型"
+    },
+    {
+      "name": "My_Login_And_Signup",
+      "value": "登录/注册"
+    },
+    {
+      "name": "My_Login_And_Signup_Prompt",
+      "value": "您还未登录，点击前往登录账号"
+    },
+    {
+      "name": "ListItem_send",
+      "value": "发送"
+    },
+    {
+      "name": "Display_Lang",
+      "value": "语言"
+    },
+    {
+      "name": "Display_Font_Size",
+      "value": "字体大小"
+    },
+    {
+      "name": "Display_Theme",
+      "value": "主题"
+    },
+    {
+      "name": "Display_Theme_Dark",
+      "value": "深色模式"
+    },
+    {
+      "name": "Display_Theme_Light",
+      "value": "浅色模式"
+    },
+    {
+      "name": "Display_Theme_Auto",
+      "value": "跟随系统"
+    },
+    {
+      "name": "Display_Theme_NumberOfReplies",
+      "value": "显示消息的总字数"
+    },
+    {
+      "name": "Display_Theme_NumberOfTokenExpend",
+      "value": "显示消息token消耗量"
+    },
+    {
+      "name": "Button_Cancel",
+      "value": "取消"
+    },
+    {
+      "name": "Button_apply",
+      "value": "应用"
+    },
+    {
+      "name": "Display_Title",
+      "value": "显示设置"
+    },
+    {
+      "name": "Model_provider",
+      "value": "模型提供方"
+    },
+    {
+      "name": "Model_url",
+      "value": "API 域名"
+    },
+    {
+      "name": "Model_model",
+      "value": "模型"
+    },
+    {
+      "name": "Model_Temperature",
+      "value": "严谨与想象(Temperature)"
+    },
+    {
+      "name": "Model_Context",
+      "value": "上下文记忆长度"
+    },
+    {
+      "name": "Button_Test_Connection",
+      "value": "测试连接"
+    },
+    {
+      "name": "Talk_Auto_Title",
+      "value": "自动生成聊天标题"
+    },
+    {
+      "name": "Button_Reset_Prompt",
+      "value": "重置为默认值"
+    },
+    {
+      "name": "Talk_NewChat_Prompt",
+      "value": "新对话默认提示"
+    },
+    {
+      "name": "Talk_NewChat_Prompt_Default",
+      "value": "你是一个知识渊博且细致的助手，能够以专业、简洁和友好的语气回答问题。无论用户提出的问题有多复杂，你都要提供清晰、有条理的回答。"
+    },
+    {
+      "name": "Model_Delete_Button",
+      "value": "删除"
+    },
+    {
+      "name": "Model_Set",
+      "value": "模型设置"
+    },
+    {
+      "name": "Model_New",
+      "value": "自定义模型"
     }
   ]
 }

@@ -11,6 +11,170 @@
     {
       "name": "EntryAbility_label",
       "value": "label"
+    },
+    {
+      "name": "Index_Tabs_Conversations",
+      "value": "Conversations"
+    },
+    {
+      "name": "Index_Tabs_Explore",
+      "value": "Explore"
+    },
+    {
+      "name": "Index_Tabs_My",
+      "value": "My"
+    },
+    {
+      "name": "Index_Title",
+      "value": "AITalk"
+    },
+    {
+      "name": "My_Model",
+      "value": "Model"
+    },
+    {
+      "name": "My_Display",
+      "value": "Display"
+    },
+    {
+      "name": "My_Talk",
+      "value": "Talk"
+    },
+    {
+      "name": "My_NewModel",
+      "value": "Custom Model"
+    },
+    {
+      "name": "My_About",
+      "value": "About"
+    },
+    {
+      "name": "My_Model_prompt",
+      "value": "Select a model and set parameters"
+    },
+    {
+      "name": "My_Display_prompt",
+      "value": "Configure the interface display effect"
+    },
+    {
+      "name": "My_Talk_prompt",
+      "value": "Set up dialogue prompts and title generation"
+    },
+    {
+      "name": "My_About_prompt",
+      "value": ""
+    },
+    {
+      "name": "My_NewModel_prompt",
+      "value": "Add a custom model"
+    },
+    {
+      "name": "My_Login_And_Signup",
+      "value": "Log in/Sign up"
+    },
+    {
+      "name": "My_Login_And_Signup_Prompt",
+      "value": "Not logged in. Click to login"
+    },
+    {
+      "name": "ListItem_send",
+      "value": "Send"
+    },
+    {
+      "name": "Display_Lang",
+      "value": "language"
+    },
+    {
+      "name": "Display_Font_Size",
+      "value": "FontSize"
+    },
+    {
+      "name": "Display_Theme",
+      "value": "Theme"
+    },
+    {
+      "name": "Display_Theme_Dark",
+      "value": "Dark"
+    },
+    {
+      "name": "Display_Theme_Light",
+      "value": "Light"
+    },
+    {
+      "name": "Display_Theme_Auto",
+      "value": "Follow System"
+    },
+    {
+      "name": "Display_Theme_NumberOfReplies",
+      "value": "Show message word count"
+    },
+    {
+      "name": "Display_Theme_NumberOfTokenExpend",
+      "value": "Show message token usage"
+    },
+    {
+      "name": "Button_Cancel",
+      "value": "cancel"
+    },
+    {
+      "name": "Button_apply",
+      "value": "apply"
+    },
+    {
+      "name": "Display_Title",
+      "value": "Display Settings"
+    },
+    {
+      "name": "Model_provider",
+      "value": "Model provider"
+    },
+    {
+      "name": "Model_url",
+      "value": "API DomainName"
+    },
+    {
+      "name": "Model_model",
+      "value": "Model"
+    },
+    {
+      "name": "Model_Temperature",
+      "value": "Temperature"
+    },
+    {
+      "name": "Model_Context",
+      "value": "Max message count in context"
+    },
+    {
+      "name": "Button_Test_Connection",
+      "value": "Test Connection"
+    },
+    {
+      "name": "Talk_Auto_Title",
+      "value": "Auto-Generate Chat Title"
+    },
+    {
+      "name": "Button_Reset_Prompt",
+      "value": "Reset to Default"
+    },
+    {
+      "name": "Talk_NewChat_Prompt",
+      "value": "Default Prompt for New Conversation"
+    },
+    {
+      "name": "Talk_NewChat_Prompt_Default",
+      "value": "You are a knowledgeable and meticulous assistant, able to answer questions with professionalism, conciseness, and friendliness. No matter how complex the questions posed by users are, you provide clear and organized responses."
+    },
+    {
+      "name": "Model_Delete_Button",
+      "value": "Delete"
+    },
+    {
+      "name": "Model_Set",
+      "value": "Model Settings"
+    },
+    {
+      "name": "Model_New",
+      "value": "Custom Model"
     }
   ]
 }

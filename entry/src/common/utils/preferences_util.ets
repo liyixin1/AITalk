@@ -15,7 +15,7 @@ export class PreferencesUtil {
         console.info("已经存在key：" + key);
       }else {
         this.dataPreferences.putSync(key,value);
-        console.info("添加成功");
+        console.info(`${key}添加成功`);
         this.flushData()
       }
     }

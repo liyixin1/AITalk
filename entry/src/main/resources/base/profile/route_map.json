@@ -7,6 +7,46 @@
       "data": {
         "description" : "this is ListItemPage"
       }
+    },
+    {
+      "name": "LoginPage",
+      "pageSourceFile": "src/main/ets/pages/login_page.ets",
+      "buildFunction": "LoginBuilder",
+      "data": {
+        "description" : "this is LoginPage"
+      }
+    },
+    {
+      "name": "ModelPage",
+      "pageSourceFile": "src/main/ets/pages/set_pages/model_page.ets",
+      "buildFunction": "ModelBuilder",
+      "data": {
+        "description" : "this is ModelPage"
+      }
+    },
+    {
+      "name": "DisPlayPage",
+      "pageSourceFile": "src/main/ets/pages/set_pages/display_page.ets",
+      "buildFunction": "DisPlayBuilder",
+      "data": {
+        "description" : "this is DisPlayPage"
+      }
+    },
+    {
+      "name": "TalkPage",
+      "pageSourceFile": "src/main/ets/pages/set_pages/talk_page.ets",
+      "buildFunction": "TalkBuilder",
+      "data": {
+        "description" : "this is TalkPage"
+      }
+    },
+    {
+      "name": "NewModelPage",
+      "pageSourceFile": "src/main/ets/pages/set_pages/new_model_page.ets",
+      "buildFunction": "NewModelBuilder",
+      "data": {
+        "description" : "this is NewModelPage"
+      }
     }
   ]
 }

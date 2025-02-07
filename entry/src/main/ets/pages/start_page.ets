@@ -1,4 +1,5 @@
 import { router } from '@kit.ArkUI';
+import { config } from '../config';
 
 @Entry
 @Component
@@ -24,11 +25,13 @@ struct StartPage {
       .alignItems(HorizontalAlign.Start)
       .opacity(this.opacityValue)
       .animation({
-        duration:1500,
+        duration: 1500,
         onFinish:()=>{
-          router.pushUrl({
-            url: 'pages/Index'
-          })
+          if (config.isConfigReady) {
+            router.pushUrl({
+              url: 'pages/Index'
+            })
+          }
         }
       })
       Blank()
