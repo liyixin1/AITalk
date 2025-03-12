@@ -1,19 +1,49 @@
 import * as Interfaces from '.././interface';
 import { dbUtil } from '../../../common/Index'
 import { config } from '../config';
-import { relationalStore } from '@kit.ArkData';
-import { SymbolGlyphModifier } from '@kit.ArkUI';
-
+import { CustomContentDialog } from '@kit.ArkUI';
+import { MessageHistory } from '../data_class'
 @Entry
 @Component
 struct Index {
   @Provide('pageInfos') pageInfos: NavPathStack = new NavPathStack()
-  @State isRefresh:boolean = false;
   @State currentIndex: number = 0;
-  @State messageList:Array<Interfaces.MessageHistory> = [];
+  @State messageList: Array<MessageHistory> = [];
   @State userID:number | null = null;
   @State hideTitle:boolean = false;
+  changeItem: number = 0;
   private listScroller: ListScroller = new ListScroller();
+  currItemName:string = ''
+  currItemId:number = 0
+  dialogController: CustomDialogController = new CustomDialogController({
+    builder: CustomContentDialog({
+      primaryTitle: '编辑名称',
+      contentBuilder: () => {
+        this.ChangName()
+      },
+      buttons: [
+        {
+          value: $r('app.string.Button_Cancel'),
+          buttonStyle: ButtonStyleMode.TEXTUAL,
+          action:()=>{
+            this.dialogController.close()
+          }
+        },
+        {
+          value: $r('app.string.Button_apply'),
+          buttonStyle: ButtonStyleMode.TEXTUAL,
+          role: ButtonRole.ERROR,
+          action: () => {
+            this.messageList[this.changeItem].name = this.currItemName
+            console.log(this.messageList[this.changeItem].name)
+            dbUtil.upDataById("myList",this.currItemId,{NAME:this.currItemName});
+            console.info('Callback when the button is clicked')
+            this.dialogController.close()
+          }
+        }
+      ],
+    })
+  })
   TooBar:Array<ToolbarItem> = [
     {
       value: $r('app.string.Index_Tabs_Conversations'),
@@ -26,30 +56,14 @@ struct Index {
       // status:this.currentIndex === 0?ToolbarItemStatus.ACTIVE:ToolbarItemStatus.NORMAL
     },
     {
-      value: $r('app.string.Index_Tabs_My'),
-      icon: $r('app.media.person'),
-      activeIcon: $r('app.media.person_active'),
-      action: ()=> {
-        this.currentIndex = 2;
-        this.hideTitle = true;
-      },
-      // status:this.currentIndex === 2?ToolbarItemStatus.ACTIVE:ToolbarItemStatus.NORMAL
-    }
-  ];
-
-  TooTmp:Array<NavigationMenuItem> = [
-    {'value': "",
-      'icon': "common/img/plus.svg",
-      'action': async ()=> {
+      value: $r('app.string.New_Chat'),
+      icon:$r('app.media.plus_square'),
+      action: async ()=> {
         let date = new Date().toLocaleDateString()
         let id = await dbUtil.insertDataR('myList',{NAME:"新对话",CREEATE_TIME:date});
         dbUtil.createRecordTable(`record${id.toString()}`);
         if(id > 0){
-          this.messageList.unshift({
-            id:id,
-            name:"新对话",
-            datetime:date
-          })
+          this.messageList.unshift(new MessageHistory(id,config.display.language === "简体中文"?"新对话":"New Chat",date))
           this.currentIndex = 3;
           this.pageInfos.pushPathByName("ListItemPage",this.messageList[0],(popInfo) => {
             if((popInfo.result as Interfaces.ListParam).name !== ""){
@@ -64,6 +78,25 @@ struct Index {
             console.log(JSON.stringify(popInfo.result));
           })
         }
+      },
+    },
+    {
+      value: $r('app.string.Index_Tabs_My'),
+      icon: $r('app.media.person'),
+      activeIcon: $r('app.media.person_active'),
+      action: ()=> {
+        this.currentIndex = 1;
+        this.hideTitle = true;
+      },
+      // status:this.currentIndex === 2?ToolbarItemStatus.ACTIVE:ToolbarItemStatus.NORMAL
+    }
+  ];
+
+  TooTmp:Array<NavigationMenuItem> = [
+    {'value': "",
+      'icon': "common/img/magnifyingglass.svg",
+      'action': async ()=> {
+
       }}
   ];
 
@@ -101,58 +134,39 @@ struct Index {
     },
   ]
 
-  @Builder itemEnd(index:number) {
-    // 构建尾端滑出组件
-    Row(){
-      Button({ type: ButtonType.Normal }) {
-        Image($r('app.media.ic_public_trash_fill'))
-          .width(28)
-          .height(28)
-      }
-      .width(100)
-      .height(64)
-      .backgroundColor($r('sys.color.warning'))
-      .onClick(() => {
-        const id = this.messageList[index].id;
-        this.listScroller.closeAllSwipeActions()
-        dbUtil.deleteSyncById("myList",id);
-        console.log(`Deleted item at index: ${index}`);
-        this.messageList.splice(index,1);
-      })
-    }
+  onEditClick(index:number):void{
+    this.currItemName = this.messageList[index].name
+    this.currItemId = this.messageList[index].id
+    this.changeItem = index
+    this.dialogController.open()
+    this.listScroller.closeAllSwipeActions()
+  }
+  onDeleteClick(index:number):void{
+    const id = this.messageList[index].id;
+    this.listScroller.closeAllSwipeActions()
+    dbUtil.deleteSyncById("myList",id);
+    console.log(`Deleted item at index: ${index}`);
+    this.messageList.splice(index,1);
+  }
+  onPush(index:number):void{
+    console.log(`index:${JSON.stringify(this.messageList[index])}`);
+    this.pageInfos.pushPathByName("ListItemPage", this.messageList[index])
   }
 
   @Builder messages() {
     // 消息页面
     List({ space: 10,scroller:this.listScroller}){
-      ForEach(this.messageList,(item:Interfaces.MessageHistory,index:number)=>{
-        ListItem(){
-          Text(){
-            Span(item.name + '\n')
-              .fontSize(18)
-              .fontColor($r('sys.color.font_primary'))
-            Span(item.datetime)
-              .fontSize(14)
-              .fontColor($r('sys.color.font_secondary'))
-          }
-        }
-        .width('100%')
-        .height(64)
-        .align(Alignment.Start)
-        .borderRadius(10)
-        .swipeAction({
-          end:{
-            builder:() => {
-              this.itemEnd(index)
-            }
-          }
+      ForEach(this.messageList,(item:MessageHistory,index:number)=>{
+        LListItem({
+          item:item,
+          onPush: () => this.onPush(index),
+          onEditClick: () => this.onEditClick(index),
+          onDeleteClick:() => this.onDeleteClick(index)
         })
-        .onClick(()=>{
-          console.log(`index:${JSON.stringify(this.messageList[index])}`);
-          this.pageInfos.pushPathByName("ListItemPage",this.messageList[index])
-        });
-      }, (item: Interfaces.MessageHistory) => item.id.toString())
+      }, (item: MessageHistory) => item.id.toString())
     }
+    .width('100%')
+    .height('100%')
     .padding(10)
     .backgroundColor($r('sys.color.comp_background_list_card'))
     .alignListItem(ListItemAlign.Center)
@@ -162,7 +176,7 @@ struct Index {
   @Builder me(){
     Column(){
       Row(){
-        Text('我的')
+        Text($r('app.string.Index_Tabs_My'))
           .fontSize(28).fontWeight(FontWeight.Bold)
       }.width('100%').height('8%')
       .padding(12).justifyContent(FlexAlign.Start)
@@ -205,28 +219,25 @@ struct Index {
         })
       }
       .width('100%')
+      .height('100%')
       .sticky(StickyStyle.Header)
     }
     .width('100%').height('100%')
   }
-  @Builder explore(){
-    Column(){
-      Button('点点')
-        .onClick(()=>{
-          const value:relationalStore.ValuesBucket = {
-            PHONE_NUMBER:123456789,
-            PASSWORD:88888888,
-            EMAIL:'123@qq.com',
-            NAME:'nihao'
-          }
-          dbUtil.insertData('users',value);
+  // 自定义弹出框的内容区
+  @Builder
+  ChangName(): void {
+    Column() {
+      TextInput({text: this.currItemName})
+        .caretColor('#90EE90')
+        .onChange((value:string)=>{
+          this.currItemName = value
         })
-      Button('删除')
-        .onClick(()=>{
-          dbUtil.deleteById('users',1)
-        })
-    }.width('100%').height('100%')
+    }
+    .width('100%')
+    .justifyContent(FlexAlign.Center)
   }
+
 
   aboutToAppear(): void {
     this.messageList = config.messageList;
@@ -237,8 +248,6 @@ struct Index {
       if (this.currentIndex == 0){
         this.messages();
       }else if(this.currentIndex == 1){
-        this.explore();
-      }else if(this.currentIndex == 2){
         this.me();
       }else{
 
@@ -252,5 +261,68 @@ struct Index {
     .menus(this.TooTmp)
     .toolbarConfiguration(this.TooBar)
     .hideTitleBar(this.hideTitle)
+  }
+}
+
+@Component
+struct LListItem {
+  @ObjectLink item: MessageHistory; // 绑定到观测对象
+  onPush: () => void = () => {};
+  onEditClick: () => void = () => {};
+  onDeleteClick: () => void = () => {};
+  build() {
+    ListItem(){
+      Text(){
+        Span(this.item.name + '\n')
+          .fontSize(18)
+          .fontColor($r('sys.color.font_primary'))
+        Span(this.item.datetime)
+          .fontSize(14)
+          .fontColor($r('sys.color.font_secondary'))
+      }
+    }
+    .width('100%')
+    .height(64)
+    .align(Alignment.Start)
+    .borderRadius(10)
+    .swipeAction({
+      end:{
+        builder:() => {
+          this.itemEnd()
+        },
+        onAction: () => {}
+      }
+    })
+    .onClick(()=>{
+      this.onPush()
+
+    });
+  }
+  @Builder itemEnd() {
+    // 构建尾端滑出组件
+    Row(){
+      Button({ type: ButtonType.Normal }){
+        Image($r('app.media.pencil'))
+          .width(28)
+          .height(28)
+      }
+      .width(50)
+      .height(64)
+      .backgroundColor($r('sys.color.brand'))
+      .onClick(() => {
+        this.onEditClick()
+      })
+      Button({ type: ButtonType.Normal }) {
+        Image($r('app.media.ic_public_trash_fill'))
+          .width(28)
+          .height(28)
+      }
+      .width(100)
+      .height(64)
+      .backgroundColor($r('sys.color.warning'))
+      .onClick(() => {
+        this.onDeleteClick()
+      })
+    }
   }
 }

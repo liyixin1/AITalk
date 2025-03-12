@@ -1,6 +1,6 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import { window,KeyboardAvoidMode  } from '@kit.ArkUI';
 import { preferenceUtil } from '../../../common/Index';
 import { dbUtil }  from '../../../common/Index'
 import { config } from '../config';
@@ -16,7 +16,6 @@ export default class EntryAbility extends UIAbility {
   }
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
-
     // 初始化Preference
     preferenceUtil.init(this.context,'myStore');
     preferenceUtil.insertData('isFirstRun',true);
@@ -28,6 +27,12 @@ export default class EntryAbility extends UIAbility {
       await config.initConfig();
     },500)
     this.context.getApplicationContext().setColorMode(config.display.theme)
+    windowStage.loadContent('pages/Index', (err, data) => {
+      if (err.code) {
+        hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
+        return;
+      }
+    });
     // Main window is created, set main page for this ability
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 

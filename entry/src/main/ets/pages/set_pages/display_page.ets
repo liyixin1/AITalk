@@ -56,12 +56,12 @@ struct DisPlayPage{
           Text($r('app.string.Display_Font_Size'))
           Select([{value:'10'},{value:'12'},{value:'14'},{value:'16'},{value:'18'},{value:'20'},{value:'22'},{value:'24'}])
             .width('100%')
-            .selected((this.currFontSize - 10 ) / 2)
+            .selected($$this.currFontSize)
             .value(this.currFontSize.toString())
             .borderRadius(8)
-            .onSelect((index:number,text:string)=>{
-              this.currFontSize = Number(text)
-            })
+            // .onSelect((index:number,text:string)=>{
+            //   this.currFontSize = Number(text)
+            // })
         }.width('100%')
         .alignItems(HorizontalAlign.Start)
         Column({space:4}){
@@ -71,9 +71,10 @@ struct DisPlayPage{
             .selected($$this.currTheme)
             .value($$this.currThemeText)
             .borderRadius(8)
-            .onSelect((index:number,text:string)=>{
-              this.currTheme = index;
-              this.currThemeText = text;
+            .onSelect(()=>{
+            // .onSelect((index:number,text:string)=>{
+              // this.currTheme = index;
+              // this.currThemeText = text;
               this.themeIsChang = true;
             })
         }.width('100%')

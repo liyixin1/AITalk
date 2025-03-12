@@ -47,6 +47,7 @@ struct TalkPage{
               this.pathStack?.pop();
             })
           Button($r('app.string.Button_apply'),{buttonStyle:ButtonStyleMode.TEXTUAL})
+            .enabled(this.button_apply)
             .onClick(()=>{
               config.upDateChatPrompt(this.chatPrompt,this.autoTitle);
             })

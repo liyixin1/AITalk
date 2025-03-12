@@ -8,16 +8,16 @@ export interface Parameter {
   chatPrompt:string,
   autoTitle:boolean
 }
-// 模型
-export interface Models {
-  url:string,
-  apiKey:string,
-  model: string,
-  chatRounds:number,
-  temperature: number,
-  chatPrompt:string,
-  autoTitle:boolean
-}
+// // 模型
+// export interface Models {
+//   url:string,
+//   apiKey:string,
+//   model: string,
+//   chatRounds:number,
+//   temperature: number,
+//   chatPrompt:string,
+//   autoTitle:boolean
+// }
 // Token消耗
 export interface TokenUsage{
   groq:TokenUsageItem,
@@ -176,6 +176,8 @@ interface OpenAIErrorContent{
   message:string,
   type:string
 }
+
+
 export interface DeepSeek{
   id: string,
   object: string,

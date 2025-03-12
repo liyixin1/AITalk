@@ -1,32 +1,4 @@
-import { connection, http } from "@kit.NetworkKit";
-
-// export function myRequest<outT,dataT>(url:string,method:http.RequestMethod,header:object,requestData:dataT){
-//   const httpRequest = http.createHttp();
-//   return new Promise((resolve:(value:outT)=>void,reject:(value?:string)=>void) => {
-//     httpRequest.request(
-//       url,
-//       {
-//         method:method,
-//         header:header,
-//         extraData:JSON.stringify(requestData) || "",
-//         connectTimeout:6000,
-//         readTimeout:6000
-//       },(error:Error,data:http.HttpResponse)=>{
-//       if(!error){
-//         if((data.result as string).includes("Error")){
-//           console.log(data.result as string);
-//           reject(data.result as string);
-//         }
-//         console.log(data.result as string);
-//         resolve(JSON.parse(data.result as string));
-//       }else{
-//         reject(error.message);
-//       }
-//       httpRequest.destroy();
-//     }
-//     )
-//   })
-// }
+import { http } from "@kit.NetworkKit";
 
 export function myRequest<outT, dataT>(
   url: string,

@@ -10,7 +10,7 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "AITalk"
     },
     {
       "name": "Index_Tabs_Conversations",
@@ -175,6 +175,14 @@
     {
       "name": "Model_New",
       "value": "自定义模型"
+    },
+    {
+      "name": "Chang_Name",
+      "value": "编辑名称"
+    },
+    {
+      "name": "New_Chat",
+      "value": "新对话"
     }
   ]
 }

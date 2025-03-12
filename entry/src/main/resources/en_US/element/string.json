@@ -10,11 +10,11 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "AITalk"
     },
     {
       "name": "Index_Tabs_Conversations",
-      "value": "Conversations"
+      "value": "Chats"
     },
     {
       "name": "Index_Tabs_Explore",
@@ -175,6 +175,14 @@
     {
       "name": "Model_New",
       "value": "Custom Model"
+    },
+    {
+      "name": "Chang_Name",
+      "value": "Edit Name"
+    },
+    {
+      "name": "New_Chat",
+      "value": "New Chat"
     }
   ]
 }

@@ -36,23 +36,22 @@ class AIModel{
     }
     this.url = config.ai.url;
   }
+  async getStreamReply(chatRecord:Array<Interfaces.Messages>){
+    chatRecord = this.limitChatRounds(chatRecord);
+    let body = this.toHttpBody(chatRecord)
+
+  }
   async getReply(chatRecord:Array<Interfaces.Messages>):Promise<Interfaces.ReturnData> {
     chatRecord = this.limitChatRounds(chatRecord);
     let body = this.toHttpBody(chatRecord);
     let resp:Interfaces.Groq | Interfaces.OpenAI | Interfaces.DeepSeek;
     try {
       if (config.currSupplier === 'Groq') {
-        resp =
-          await myRequest<Interfaces.Groq, Interfaces.RequestBody>(this.url, http.RequestMethod.POST, this.headers,
-            body);
+        resp = await myRequest<Interfaces.Groq, Interfaces.RequestBody>(this.url, http.RequestMethod.POST, this.headers, body);
       }else if (config.currSupplier === 'DeepSeek'){
-        resp =
-          await myRequest<Interfaces.DeepSeek, Interfaces.RequestBody>(this.url, http.RequestMethod.POST, this.headers,
-            body);
+        resp = await myRequest<Interfaces.DeepSeek, Interfaces.RequestBody>(this.url, http.RequestMethod.POST, this.headers, body);
       }else{
-        resp =
-          await myRequest<Interfaces.OpenAI, Interfaces.RequestBody>(this.url, http.RequestMethod.POST, this.headers,
-            body);
+        resp = await myRequest<Interfaces.OpenAI, Interfaces.RequestBody>(this.url, http.RequestMethod.POST, this.headers, body);
       }
       if (!resp || !resp.choices || resp.choices.length === 0 || !resp.choices[0].message || !resp.choices[0].message.content) {
         throw new Error("响应数据不完整");
@@ -63,6 +62,13 @@ class AIModel{
           token:resp.usage.total_tokens,
           message:resp.choices[0].message as Interfaces.DeepSeekMessage
         }
+      }else if(config.currSupplier === "Groq"){
+        console.log('Groq_dataR')
+        dataR = {
+          token:resp.usage.total_tokens,
+          message:resp.choices[0].message.content as string
+        }
+        console.log(dataR.message as string)
       }else{
         dataR = {
           token:resp.usage.total_tokens,
@@ -91,7 +97,7 @@ class AIModel{
       return dataR
     }
   }
-   async getItemName(chatRecord:Array<Interfaces.Messages>):Promise<Interfaces.ReturnData> {
+  async getItemName(chatRecord:Array<Interfaces.Messages>):Promise<Interfaces.ReturnData> {
      let data:Array<Interfaces.Messages> = [...chatRecord];
      data.push({role:"user",content:[{type:'text',text:"请你基于以上对话，给我们此次交流的主题命名，要求不超过30字，且你只答复名字本身，不要包含其他内容，名字本身不需要用《》等符号包裹。"}]})
      let body1:Interfaces.RequestBody = this.toHttpBody(data);
@@ -214,12 +220,12 @@ class AIModel{
     return body
   }
 
-  toRecordItem(name:string,data:Interfaces.ReturnData | string,ImageUrl:Array<string>):Interfaces.Messages{
+  toRecordItem(name:string, data:string, ImageUrl:Array<string>):Interfaces.Messages{
     let messages:Interfaces.Messages;
     if(name == 'assistant'){
       messages = {
         role:name,
-        content: (data as Interfaces.ReturnData).message as string
+        content: data
       }
     }else{
       messages = {

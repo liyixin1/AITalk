@@ -36,15 +36,20 @@ struct StartPage {
       })
       Blank()
       Blank()
-      Image($r('app.media.huaweilogo1'))
+      Image($r('app.media.AITalk'))
         .width(100)
     }
     .width('100%')
     .height('100%')
-    .linearGradient({
+    .linearGradient(config.display.theme === 0?{
+      colors:[
+        ['#1E3A5F',0],['#2D2D2D',1]
+      ]
+    }:{
       colors:[
         ['#87CEEB',0],['#F8F8F8',1]
       ]
-    })
+    }
+    )
   }
 }

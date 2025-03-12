@@ -196,7 +196,7 @@ struct ModelPage{
               const temp = await aiModel.testLink(this.currSelectModelText,this.apiKey,this.url)
               if (temp.token === 0) {
                 AlertDialog.show({
-                  message: temp.message
+                  message: temp.message as string
                 })
               }else{
                 AlertDialog.show({

@@ -5,14 +5,14 @@ import { dbUtil } from '../../common/Index'
 import { util } from '@kit.ArkTS';
 import { fileIo as fs,} from '@kit.CoreFileKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-
+import { MessageHistory } from './data_class'
 class ConfigManager{
   // 配置模型参数
   PROVIDER_ICON:string = "app.media.star_fill"
   ai:Interfaces.Parameter;  //模型参数
   currSupplier:string;
   display:Interfaces.Display; //显示设置
-  messageList:Array<Interfaces.MessageHistory>; //消息列表
+  messageList:MessageHistory[]; //消息列表
   provider:Array<Interfaces.Provider>;
   providerName:Array<SelectOption>;
   providerModel:Array<Array<SelectOption>>;
@@ -37,7 +37,7 @@ class ConfigManager{
       model:'',
       chatRounds:20,
       temperature:1,
-      chatPrompt:'',
+      chatPrompt:'你是一个知识渊博且细致的助手，能够以专业、简洁和友好的语气回答问题。无论用户提出的问题有多复杂，你都要提供清晰、有条理的回答。请使用中文回答问题。',
       autoTitle:true
     }
     this.display = {

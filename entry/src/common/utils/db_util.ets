@@ -1,6 +1,7 @@
 import { relationalStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import * as Interfaces from '../../main/ets/interface'
+import { MessageHistory } from '../../main/ets/data_class'
 class DBUtil{
   private rdbStore:relationalStore.RdbStore | null = null;
   isDBReady:boolean = false
@@ -170,17 +171,14 @@ class DBUtil{
     if(id){
       predicates2.equalTo('ID', id);
     }
-    let rData:Array<Interfaces.MessageHistory> = [];
+    let rData:Array<MessageHistory> = [];
     const resultSet = await (this.rdbStore as relationalStore.RdbStore).query(predicates2,column);
     // resultSet是一个数据集合的游标，默认指向第-1个记录，有效的数据从0开始。
     while (resultSet.goToNextRow()) {
       let id = resultSet.getDouble(resultSet.getColumnIndex("ID"));
       let name = resultSet.getString(resultSet.getColumnIndex("NAME"));
       let date = resultSet.getString(resultSet.getColumnIndex("CREEATE_TIME"));
-      let temp:Interfaces.MessageHistory = {} as Interfaces.MessageHistory;
-      temp.id = id;
-      temp.name = name;
-      temp.datetime = date;
+      let temp:MessageHistory = new MessageHistory(id,name,date);
       rData.push(temp);
     }
     console.log('List读取结束')
@@ -193,17 +191,14 @@ class DBUtil{
     if(id){
       predicates2.equalTo('ID', id);
     }
-    let rData:Array<Interfaces.MessageHistory> = [];
+    let rData:Array<MessageHistory> = [];
     const resultSet = (this.rdbStore as relationalStore.RdbStore).querySync(predicates2,column);
     // resultSet是一个数据集合的游标，默认指向第-1个记录，有效的数据从0开始。
     while (resultSet.goToNextRow()) {
       let id = resultSet.getDouble(resultSet.getColumnIndex("ID"));
       let name = resultSet.getString(resultSet.getColumnIndex("NAME"));
       let date = resultSet.getString(resultSet.getColumnIndex("CREEATE_TIME"));
-      let temp:Interfaces.MessageHistory = {} as Interfaces.MessageHistory;
-      temp.id = id;
-      temp.name = name;
-      temp.datetime = date;
+      let temp:MessageHistory = new MessageHistory(id,name,date);
       rData.push(temp);
     }
     rData.reverse()
