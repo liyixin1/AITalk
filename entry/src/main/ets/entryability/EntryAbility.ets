@@ -28,6 +28,9 @@ export default class EntryAbility extends UIAbility {
     },500)
     this.context.getApplicationContext().setColorMode(config.display.theme)
     windowStage.loadContent('pages/Index', (err, data) => {
+      let keyboardAvoidMode = windowStage.getMainWindowSync().getUIContext().getKeyboardAvoidMode();
+      // 设置虚拟键盘抬起时把页面上抬直到露出光标
+    windowStage.getMainWindowSync().getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.OFFSET);
       if (err.code) {
         hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
         return;
@@ -43,6 +46,7 @@ export default class EntryAbility extends UIAbility {
       }
       hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
     });
+
   }
 
   onWindowStageDestroy(): void {
