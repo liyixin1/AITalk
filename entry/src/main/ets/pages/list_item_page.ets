@@ -1,14 +1,15 @@
 import * as Interfaces from '.././interface';
+import * as responseInterface from '.././responseInterface';
 import { config } from '../config'
 import { aiModel } from '../ai_model'
-import { lvMarkdownIn, lvText, lvCode } from "@luvi/lv-markdown-in"
+import { lvMarkdownIn, lvText } from "@luvi/lv-markdown-in"
 import { inputMethod } from '@kit.IMEKit';
 import { dbUtil } from '../../../common/utils/db_util';
-import { fileIo, picker } from '@kit.CoreFileKit';
+import { fileIo } from '@kit.CoreFileKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import image from '@ohos.multimedia.image';
 import { buffer } from '@kit.ArkTS';
-
+import { myStreamRequest } from '../../../common/utils/http_util'
 
 @Builder
 export function ListItemBuilder() {
@@ -35,10 +36,13 @@ struct ListItemPage {
   @State ImageUrl: Array<string> = []
   @State chatImage: Array<image.PixelMap> = []
   @State userInput: string = ""
-
   @State arrtext: string[] = [];
   @State timer: number = 0;
   @State index:number = 0
+  scroller: Scroller = new Scroller()
+  // 流式调用
+  private streamRequest: myStreamRequest = new myStreamRequest();
+  @State isLoading: boolean = false;
   // 新增样式常量集中管理
   private readonly STYLES: GeneratedObjectLiteralInterface_1 = {
     ICON_SIZE: 32,
@@ -48,51 +52,142 @@ struct ListItemPage {
     TYPING_INTERVAL: 10
   }
 
-  async aboutToAppear() {
+  aboutToAppear() {
+    this.chatRecord.push({
+      role: 'system',
+      content: config.ai.chatPrompt,
+    });
     if (config.currSupplier === 'OpenAI') {
-      this.chatRecord.push({
-        role: 'developer',
-        content: config.ai.chatPrompt,
-      })
-    } else if (config.currSupplier === 'Groq') {
-      this.chatRecord.push({
-        role: 'system',
-        content: config.ai.chatPrompt,
-      })
+      this.chatRecord[0].role = 'developer';
     }
+    this.setupEventListeners();
     this.TokenUsage.push('0');
     lvText.setTextSize(config.display.fontsize)
+  }
+  aboutToDisappear(): void {
+    this.streamRequest.destroy()
+  }
+  // 设置事件监听器
+  private setupEventListeners() {
+    console.log('[DEBUG] setupEventListeners 被调用'); // 🔍 检查调用次数
+    // 监听数据接收事件
+    this.streamRequest.on('dataReceive', (data:string) => {
+      if (config.currSupplier === 'DeepSeek'){
+        const jsonData:responseInterface.DeepSeekStream = JSON.parse(data)
+        if (jsonData.choices && jsonData.choices.length > 0 && jsonData.choices[0].delta && jsonData.choices[0].delta.content) {
+          const currText:string = this.chatRecord[this.chatRecord.length-1].content + jsonData.choices[0].delta.content
+          this.chatRecord.pop();
+          this.chatRecord.push(aiModel.toRecordItem('assistant',currText,[]))
+          if (jsonData.choices[0].finish_reason === 'stop' && jsonData.usage) {
+            this.TokenUsage.push(jsonData.usage.total_tokens.toString())
+          }
+        }
+      }else if (config.currSupplier === 'Groq'){
+        const jsonData:responseInterface.GroqStream = JSON.parse(data)
+        if (jsonData.choices && jsonData.choices.length > 0 && jsonData.choices[0].delta && jsonData.choices[0].delta.content) {
+          const currText:string = this.chatRecord[this.chatRecord.length-1].content + jsonData.choices[0].delta.content
+          this.chatRecord.pop();
+          this.chatRecord.push(aiModel.toRecordItem('assistant',currText,[]))
+          if (jsonData.choices[0].finish_reason !== null && jsonData.x_groq && jsonData.x_groq.usage) {
+            this.TokenUsage.push(jsonData.x_groq.usage.total_tokens.toString())
+          }
+        }
+      }else{
+        const jsonData:responseInterface.OpenAIStream = JSON.parse(data);
+        if (jsonData.choices && jsonData.choices.length > 0 && jsonData.choices[0].delta && jsonData.choices[0].delta.content) {
+          const currText:string = this.chatRecord[this.chatRecord.length-1].content + jsonData.choices[0].delta.content
+          this.chatRecord.pop();
+          this.chatRecord.push(aiModel.toRecordItem('assistant',currText,[]))
+          if (jsonData.choices[0].finish_reason !== null) {
+            this.TokenUsage.push('0')
+          }
+        }
+      }
+
+    });
+    // 监听数据结束事件
+    this.streamRequest.on('dataEnd', () => {
+      console.log('dataEnd---')
+      this.isLoading = false;
+      aiModel.saveToDatabase(
+        this.currId,
+        'assistant',
+        this.chatRecord[this.chatRecord.length-1].content as string,
+        this.TokenUsage[this.TokenUsage.length-1]
+      );
+      if (config.ai.autoTitle && this.chatRecord.length === 3) {
+        this.fetchItemNameIfNeeded()
+      }
+    });
+    this.streamRequest.on('headersReceive',()=>{
+      console.log('headersReceive---')
+      this.chatRecord.push(aiModel.toRecordItem('assistant','',this.ImageUrl))
+    });
+  }
+  // 发送消息
+  private async sendMessage(){
+    if (!this.userInput.trim()) {
+      return;
+    }
+    try {
+      this.buttonDisabled = false;
+      this.chatRecord.push(aiModel.toRecordItem('user', this.userInput,this.ImageUrl));
+      this.ImageUrl = [];
+      this.userInput = "";
+      aiModel.saveToDatabase(
+        this.currId,
+        'user',
+        JSON.stringify(this.chatRecord[this.chatRecord.length-1].content),
+        '0'
+      )
+      this.TokenUsage.push('0');
+      await aiModel.getStreamReply(this.chatRecord,this.streamRequest);
+    } catch (error) {
+      console.error('错误：', JSON.stringify(error))
+    }finally {
+      this.buttonDisabled = true; // 重新启用按钮
+    }
+
   }
 
   build() {
     NavDestination() {
-      Flex({ direction: FlexDirection.Column }) {
-        Column() {
+      Scroll(this.scroller){
+        Flex({direction:FlexDirection.Column,alignItems:ItemAlign.Center}){
           List({ space: 10 }) {
-            ForEach(this.chatRecord, (chat: Interfaces.Messages, index) => {
-              this.messageItem(chat, index)
-            })
-          }.height('100%')
-          .width('100%')
-        }
-        .width("100%")
-        .height('95%')
-        Column(){
-          TextArea({ text: $$this.userInput })
-            .type(TextAreaType.NORMAL)
-            .width('95%')
-            .flexGrow(1)
-            .margin(5)
-            .borderRadius(8)
+              ForEach(this.chatRecord, (chat: Interfaces.Messages, index) => {
+                this.messageItem(chat, index)
+              })
+          }.flexGrow(1).width('100%')
+          Row({space:4}){
+            ForEach(this.chatImage, (item: image.PixelMap, index) => {
+              Image(item)
+                .height(64)
+                .width(64)
+                .borderRadius(8)
+                .borderWidth(1)
+                .borderColor($r('sys.color.font_fourth') )
+                .objectFit(ImageFit.Contain)
+                .onClick(() => {
+                  this.chatImage.splice(index, 1);
+                  this.ImageUrl.splice(index, 1);
+                })
+            }, (item: string) => item)
+          }.width('100%')
+          .margin(4)
+          .justifyContent(FlexAlign.Start)
+          .constraintSize({ minHeight:0, maxHeight: 64 })
+          Divider()
+            .width('100%')
+            .alignSelf(ItemAlign.End)
           Row(){
             Button({ type: ButtonType.Circle }) {
               Image($r('app.media.picture'))
                 .fillColor($r('sys.color.icon_primary'))
                 .onClick(() => this.handleImageSelect())
             }
-            .width(32)
+            .width(28)
             .height(28)
-            .flexGrow(0)
             .margin(5)
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             Blank()
@@ -102,87 +197,22 @@ struct ListItemPage {
               .height(28)
               .buttonStyle(ButtonStyleMode.EMPHASIZED)
               .borderRadius(4)
-              .flexGrow(0)
               .margin(5)
               .alignSelf(ItemAlign.End)
               .onClick(async () => {
-                if (!this.userInput.trim()) return;
-
-                this.buttonDisabled = false;
-
-                let date = new Date().toLocaleDateString()
-                try {
-                  inputMethod.getController().stopInputSession();
-                  this.chatRecord.push(aiModel.toRecordItem('user', this.userInput, this.ImageUrl))
-                  this.TokenUsage.push('0');
-                  this.ImageUrl = [];
-                  this.userInput = "";
-
-                  const reply = await aiModel.getReply(this.chatRecord);
-                  if (reply.token === 0) {
-                    this.chatRecord.pop();
-                    this.TokenUsage.pop();
-                    AlertDialog.show({
-                      message: reply.message as string
-                    })
-                    return
-                  }
-                  dbUtil.insertData("record" + this.currId, {
-                    SENDER: this.chatRecord[this.chatRecord.length-1].role,
-                    MESSAGE: JSON.stringify(this.chatRecord[this.chatRecord.length-1].content),
-                    TOKENUSAGE: '0',
-                    TIMESTAMP: date
-                  })
-                  this.chatRecord.push(aiModel.toRecordItem('assistant', '', this.ImageUrl));
-                  if (config.currSupplier === 'DeepSeek'){
-                    this.arrtext = (reply.message as Interfaces.DeepSeekMessage).content.split("")
-                  }else{
-                    this.arrtext = (reply.message as string).split("")
-                  }
-                  this.timer = setInterval(() => {
-                    let item = this.arrtext[this.index]
-                    let currtext:string = (this.chatRecord[this.chatRecord.length-1].content as string) + item
-                    this.chatRecord.pop()
-                    this.chatRecord.push(aiModel.toRecordItem('assistant', currtext, this.ImageUrl))
-                    this.index++
-                    if (this.index >= this.arrtext.length) {
-                      clearInterval(this.timer)
-                    }
-                  }, 10)
-                  this.TokenUsage.push(reply.token.toString())
-                  dbUtil.insertData("record" + this.currId, {
-                    SENDER: this.chatRecord[this.chatRecord.length-1].role,
-                    MESSAGE: this.chatRecord[this.chatRecord.length-1].content as string,
-                    TOKENUSAGE: reply.token.toString(),
-                    TIMESTAMP: date
-                  })
-                  if (config.ai.autoTitle) {
-                    this.fetchItemNameIfNeeded();
-                  }
-                } catch (error) {
-                  console.error('发送过程错误:', error);
-                } finally {
-                  this.buttonDisabled = true; // 重新启用按钮
-                }
+                inputMethod.getController().stopInputSession();
+                await this.sendMessage();
               })
           }.width('100%').justifyContent(FlexAlign.Start)
-        }.width('100%').constraintSize({ maxHeight: "40%" })
-        Row({ space: 4 }) {
-          ForEach(this.chatImage, (item: image.PixelMap, index) => {
-            Image(item)
-              .height(64)
-              .borderRadius(8)
-              .onClick(() => {
-                this.chatImage.splice(index, 1);
-                this.ImageUrl.splice(index, 1);
-              })
-
-          }, (item: string) => item)
-        }.width('100%')
-        .margin(4)
-        .constraintSize({ maxHeight: "15%" })
-      }.width('100%').height('100%')
-      .backgroundColor($r('sys.color.background_primary'))
+          TextArea({ text: $$this.userInput })
+            .type(TextAreaType.NORMAL)
+            .width('95%')
+            .margin(5)
+            .borderRadius(8)
+            .constraintSize({ maxHeight: "40%" })
+        }.width('100%').height('100%')
+        .backgroundColor($r('sys.color.background_primary'))
+      }
     }
     .title(this.itemName)
     .mode(NavDestinationMode.STANDARD)
@@ -214,18 +244,16 @@ struct ListItemPage {
   }
 
   async fetchItemNameIfNeeded() {
-    if (this.chatRecord.length === 3) {
-      try {
-        const itemName = await aiModel.getItemName(this.chatRecord);
-        if (itemName.token != 0) {
-          this.itemName = itemName.message as string
-        } else {
-          this.itemName = "新对话"
-        }
-      } catch (error) {
-        console.error("获取对话名称时发生错误:", error);
-        this.itemName = "新对话"; // 设置默认名称以避免崩溃
+    try {
+      const itemName = await aiModel.getItemName(this.chatRecord);
+      if (itemName.token != 0) {
+        this.itemName = itemName.message as string
+      } else {
+        this.itemName = "新对话"
       }
+    } catch (error) {
+      console.error("获取对话名称时发生错误:", error);
+      this.itemName = "新对话"; // 设置默认名称以避免崩溃
     }
   }
 
@@ -279,7 +307,6 @@ struct ListItemPage {
         Column(){
           this.assistantMessage(chat, index)
         }
-        .borderRadius(8)
         .backgroundColor($r('sys.color.comp_background_list_card'))
         .border({
           radius: {
@@ -294,7 +321,7 @@ struct ListItemPage {
       } else if (chat.role === 'user') {
         Column(){
           this.userMessage(chat)
-        }.borderRadius(8)
+        }
         .backgroundColor("#07C160")  // 微信绿
         .border({
           radius: {
@@ -328,7 +355,6 @@ struct ListItemPage {
   // 助手消息组件
   @Builder
   assistantMessage(chat: Interfaces.Messages, index: number) {
-    Column() {
       // 消息主体
       lvMarkdownIn({
         text: chat.content as string,
@@ -342,7 +368,6 @@ struct ListItemPage {
       if (config.display.showNumberOfReplies || config.display.showNumberOfTokenExpend) {
         this.messageStats(chat, index)
       }
-    }
   }
   // 消息统计组件
   @Builder
@@ -365,7 +390,7 @@ struct ListItemPage {
   // 用户消息组件
   @Builder
   userMessage(chat: Interfaces.Messages) {
-    Text((chat.content as Interfaces.ContentItem[])[0].text as string)
+    Text((chat.content as Interfaces.ContentItem[])[0].text )
       .textAlign(TextAlign.End)
       .alignSelf(ItemAlign.End)
       .fontSize(config.display.fontsize)
@@ -373,6 +398,4 @@ struct ListItemPage {
       .padding(12)
       .borderRadius(this.STYLES.BORDER_RADIUS)
   }
-
-
 }

@@ -1,7 +1,11 @@
 import { config } from './config'
 import * as Interfaces from './interface';
-import { myRequest } from '../../common/Index'
+import { dbUtil, myRequest } from '../../common/Index'
 import { http } from '@kit.NetworkKit';
+import { myStreamRequest } from '../../common/utils/http_util';
+import * as responseInterface from './responseInterface'
+import { ListMessages,ContentItem,ContentItemImage } from './data_class';
+
 class AIModel{
   headers:Interfaces.HttpHeaders;
   url:string;
@@ -36,11 +40,16 @@ class AIModel{
     }
     this.url = config.ai.url;
   }
-  async getStreamReply(chatRecord:Array<Interfaces.Messages>){
+  async getStreamReply(chatRecord:Array<Interfaces.Messages>, streamRequest: myStreamRequest){
     chatRecord = this.limitChatRounds(chatRecord);
-    let body = this.toHttpBody(chatRecord)
-
+    let body = this.toHttpBody2(chatRecord)
+    try {
+      await streamRequest.fetchStreamRequest<Interfaces.RequestBody>(this.url,this.headers,body)
+    }catch (error) {
+      console.error('发送消息失败:', JSON.stringify(error));
+    }
   }
+
   async getReply(chatRecord:Array<Interfaces.Messages>):Promise<Interfaces.ReturnData> {
     chatRecord = this.limitChatRounds(chatRecord);
     let body = this.toHttpBody(chatRecord);
@@ -99,7 +108,7 @@ class AIModel{
   }
   async getItemName(chatRecord:Array<Interfaces.Messages>):Promise<Interfaces.ReturnData> {
      let data:Array<Interfaces.Messages> = [...chatRecord];
-     data.push({role:"user",content:[{type:'text',text:"请你基于以上对话，给我们此次交流的主题命名，要求不超过30字，且你只答复名字本身，不要包含其他内容，名字本身不需要用《》等符号包裹。"}]})
+     data.push({role:'user',content:'请你基于以上对话，给我们此次交流的主题命名，要求不超过30字，且你只答复名字本身，不要包含其他内容，名字本身不需要用《》等符号包裹。'})
      let body1:Interfaces.RequestBody = this.toHttpBody(data);
      let resp:Interfaces.Groq | Interfaces.OpenAI;
      try {
@@ -219,6 +228,15 @@ class AIModel{
     }
     return body
   }
+  toHttpBody2(chatRecord:Array<Interfaces.Messages>):Interfaces.RequestBody{
+    let body:Interfaces.RequestBody = {
+      model:config.ai.model,
+      messages:chatRecord,
+      stream:true,
+      temperature:config.ai.temperature
+    }
+    return body
+  }
 
   toRecordItem(name:string, data:string, ImageUrl:Array<string>):Interfaces.Messages{
     let messages:Interfaces.Messages;
@@ -252,8 +270,31 @@ class AIModel{
     }
 		return messages;
 	}
+  toRecordItem2(name:string, data:string, ImageUrl:Array<string>):ListMessages{
+    let messages:ListMessages
+    if(name == 'assistant'){
+      messages = new ListMessages(name,data)
+    }else{
+      let item:ContentItem[] = [];
+      item.push(new ContentItem('text',data))
+      for(let i=0;i<ImageUrl.length;i++){
+        const image = new ContentItemImage(`data:image/jpeg;base64,{${ImageUrl[i]}}`);
+        item.push(new ContentItem('image_url'));
+        item[item.length-1].image_url = image
+      }
+      messages = new ListMessages(name,item)
+    }
+    return messages;
+  }
 
   limitChatRounds(chatRecord:Array<Interfaces.Messages>):Array<Interfaces.Messages>{
+    if((chatRecord.length - 1) / 2 > config.ai.chatRounds){
+      return chatRecord.splice(0,1).concat(chatRecord.splice(chatRecord.length - config.ai.chatRounds));
+    }else{
+      return chatRecord;
+    }
+  }
+  limitChatRounds2(chatRecord:Array<ListMessages>):Array<ListMessages>{
     if((chatRecord.length - 1) / 2 > config.ai.chatRounds){
       return chatRecord.splice(0,1).concat(chatRecord.splice(chatRecord.length - config.ai.chatRounds));
     }else{
@@ -273,6 +314,17 @@ class AIModel{
       return "上传失败";
     }
   }
+  saveToDatabase(id:number,role:string,data:string,token:string){
+    const date = new Date().toLocaleDateString()
+    dbUtil.insertData("record" + id,
+      {
+        SENDER: role,
+        MESSAGE: data,
+        TOKENUSAGE: token,
+        TIMESTAMP: date
+      })
+  }
+
 }
 
 const aiModel = new AIModel();
