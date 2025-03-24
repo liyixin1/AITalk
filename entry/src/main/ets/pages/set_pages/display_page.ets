@@ -3,6 +3,7 @@ import { i18n } from "@kit.LocalizationKit"
 import { BusinessError } from "@kit.BasicServicesKit"
 import { atomicService } from '@kit.ScenarioFusionKit';
 import { ConfigurationConstant } from "@kit.AbilityKit";
+import { window } from "@kit.ArkUI";
 
 @Builder
 export function DisPlayBuilder() {
@@ -16,16 +17,24 @@ struct DisPlayPage{
   @State currLangText:string = ''
   langIsChang:boolean = false
   @State currFontSize:number = 10
+  @State currFontSelect:number = 0
   @State currTheme:number = 0
   @State currThemeText:Resource | string = $r('app.string.Display_Theme_Auto')
   themeIsChang:boolean = false
   @State showNumberOfReplies:boolean = true
   @State showNumberOfTokenExpend:boolean = true
+  fontsizeList:SelectOption[] = [{value:'10'},{value:'12'},{value:'14'},{value:'16'},{value:'18'},{value:'20'},{value:'22'},{value:'24'}]
 
   aboutToAppear(): void {
     this.currLangText = config.display.language;
     this.currLang = config.getLangNum(config.display.language);
     this.currFontSize = config.display.fontsize;
+    for (let i = 0; i < this.fontsizeList.length; i++) {
+      if (this.currFontSize.toString() == this.fontsizeList[i].value) {
+        this.currFontSelect = i;
+        break;
+      }
+    }
     this.currTheme = config.display.theme;
     this.showNumberOfReplies = config.display.showNumberOfReplies;
     this.showNumberOfTokenExpend = config.display.showNumberOfTokenExpend;
@@ -54,14 +63,15 @@ struct DisPlayPage{
         .alignItems(HorizontalAlign.Start)
         Column({space:4}){
           Text($r('app.string.Display_Font_Size'))
-          Select([{value:'10'},{value:'12'},{value:'14'},{value:'16'},{value:'18'},{value:'20'},{value:'22'},{value:'24'}])
+          Select(this.fontsizeList)
             .width('100%')
-            .selected($$this.currFontSize)
+            .selected($$this.currFontSelect)
             .value(this.currFontSize.toString())
             .borderRadius(8)
-            // .onSelect((index:number,text:string)=>{
-            //   this.currFontSize = Number(text)
-            // })
+            .onSelect((index:number,value:string)=>{
+              this.currFontSelect = index
+              this.currFontSize = Number(value)
+            })
         }.width('100%')
         .alignItems(HorizontalAlign.Start)
         Column({space:4}){
@@ -112,6 +122,7 @@ struct DisPlayPage{
                 let err: BusinessError = error as BusinessError;
                 console.error(`call System.setAppPreferredLanguage zh failed, error code: ${err.code}, message: ${err.message}.`);
               }
+              this.pathStack?.pop()
             })
         }.width('100%')
         .alignSelf(ItemAlign.End)

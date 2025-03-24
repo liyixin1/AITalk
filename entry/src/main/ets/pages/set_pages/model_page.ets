@@ -36,11 +36,6 @@ struct ModelPage{
     this.model = config.providerModel;
     this.currProvider = this.provider.findIndex((item:SelectOption)=>item.value.toString() === this.currSelectProviderText)
     this.url = config.ai.url
-    // for (let index = 0; index < this.model.length; index++) {
-    //   for (let j = 0; j < this.model[index].length; j++) {
-    //     console.log(this.model[index][j].value.toString())
-    //   }
-    // }
   }
   @Builder selectProvider(data:Array<SelectOption>){
     Select(data)
@@ -55,19 +50,16 @@ struct ModelPage{
       .menuAlign(MenuAlignType.START, {dx:0, dy:0})
       .optionWidth(200)
       .optionHeight(300)
-      .onSelect((index:number, text?: string | undefined)=>{
+      .onSelect((index:number, text: string)=>{
         console.info('Select:' + index)
         let val = preferenceUtil.readDate(this.currSelectProviderText,config.ai) as Interfaces.Parameter;
         this.url = val.url;
         this.apiKey = val.apiKey;
+        this.currSelectModelText = val.model != ""?val.model:this.model[index][0].value as string
         this.currModel = this.model[index].findIndex((item:SelectOption)=>item.value.toString() === val.model);
         this.sliderTemperature = val.temperature;
         this.sliderChatRound = val.chatRounds;
-        // this.url = config.provider[index].url
-        // if(text){
-        //   // this.currSelectProviderText = text;
-        //   this.currSelectModelText = this.model[this.currProvider][0].value.toString()
-        // }
+        this.currSelectProviderText = text
       })
   }
   build() {
@@ -126,8 +118,7 @@ struct ModelPage{
           Text($r('app.string.Model_model'))
             .fontSize(12)
             .fontColor($r('sys.color.font_secondary'))
-          if(this.currProvider >= 0 && this.currProvider < this.model.length && this.model !== undefined && this.model[this.currProvider].length > 0){
-            Select(this.model[this.currProvider])
+            Select(this.model[this.currProvider] ?? [])
               .width('80%')
               .borderRadius(8)
               .selected($$this.currModel)
@@ -139,14 +130,6 @@ struct ModelPage{
               .menuAlign(MenuAlignType.START, {dx:0, dy:0})
               .optionWidth(200)
               .optionHeight(300)
-              .onSelect((index:number, text?: string | undefined)=>{
-                console.info('Select:' + index)
-                // this.currModel = index;
-                if(text){
-                  // this.currSelectModelText = text;
-                }
-              })
-          }
         }
         .width('100%')
         .alignItems(HorizontalAlign.Start)
@@ -215,6 +198,7 @@ struct ModelPage{
             .onClick(()=>{
               config.upDateModelSet(this.currSelectProviderText,this.url,this.apiKey,this.currSelectModelText,this.sliderChatRound,this.sliderTemperature);
               aiModel.upData();
+              this.pathStack?.pop()
             })
         }.width('100%')
         .alignSelf(ItemAlign.End)
