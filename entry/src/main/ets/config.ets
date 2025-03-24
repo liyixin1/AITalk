@@ -19,18 +19,7 @@ class ConfigManager{
   isChange:boolean;
   // 读取文件完成标志
   isConfigReady: boolean = false;
-
-  // ListItem:Interfaces.UserList
   constructor(){
-    // this.ai = {
-    //   "url": "",
-    //   "apiKey": "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",
-    //   "model": "mixtral-8x7b-32768",
-    //   "chatRounds": 20,
-    //   "temperature": 0.80,
-    //   "chatPrompt": "你是一个知识渊博且细致的助手，能够以专业、简洁和友好的语气回答问题。无论用户提出的问题有多复杂，你都要提供清晰、有条理的回答。请使用中文回答问题。",
-    //   "autoTitle": true
-    // }
     this.ai = {
       url:'',
       apiKey:'',
@@ -71,7 +60,7 @@ class ConfigManager{
       preferenceUtil.upData('isFirstRun',false);
       preferenceUtil.insertData('currSupplier',this.currSupplier);
       for (let index = 0; index < this.providerName.length; index++) {
-        this.ai = {
+        const temp:Interfaces.Parameter = {
           url:this.provider[index].url,
           apiKey:'',
           model:this.provider[index].model[0],
@@ -80,9 +69,8 @@ class ConfigManager{
           chatPrompt:'',
           autoTitle:true
         }
-        preferenceUtil.insertData(this.providerName[index].value.toString(),this.ai);
+        preferenceUtil.insertData(this.providerName[index].value.toString(),temp);
       }
-      // preferenceUtil.insertData('ai',this.ai);
       preferenceUtil.insertData('display',this.display);
     }else{
       this.provider = preferenceUtil.readDate('provider',this.provider) as Array<Interfaces.Provider>;
@@ -104,6 +92,7 @@ class ConfigManager{
     this.isConfigReady = true; // 标志完成
     console.log('config OK')
   }
+  // 在调用处使用async/await同步
   deleteListItem(index:number){
     this.messageList.splice(index,1);
     preferenceUtil.upData('messageList',this.messageList);
