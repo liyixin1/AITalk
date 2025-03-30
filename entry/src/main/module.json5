@@ -18,6 +18,16 @@
       },
       {
         'name': 'ohos.permission.GET_NETWORK_INFO'
+      },
+      {
+        "name" : "ohos.permission.DISTRIBUTED_DATASYNC",
+        "reason": "$string:distributed_permission",
+        "usedScene": {
+          "abilities": [
+            "MainAbility"
+          ],
+          "when": "inuse"
+        }
       }
     ],
     "abilities": [

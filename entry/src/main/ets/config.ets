@@ -1,11 +1,13 @@
-import { preferenceUtil } from '../../common/Index'
+import { preferenceUtil } from './common/Index'
 import * as Interfaces from './interface';
 import { buffer } from '@kit.ArkTS';
-import { dbUtil } from '../../common/Index'
+import { dbUtil } from './common/Index'
 import { util } from '@kit.ArkTS';
 import { fileIo as fs,} from '@kit.CoreFileKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { MessageHistory } from './data_class'
+import { abilityAccessCtrl, bundleManager, common } from '@kit.AbilityKit';
+
 class ConfigManager{
   // 配置模型参数
   PROVIDER_ICON:string = "app.media.star_fill"
@@ -184,6 +186,44 @@ class ConfigManager{
     let base64Helper  = new util.Base64Helper();
     let result:string = base64Helper .encodeToStringSync(data, util.Type.MIME);
     return result
+  }
+  async checkPermission(): Promise<boolean> {
+    try {
+      // 获取应用TokenID
+      const bundleInfo = bundleManager.getBundleInfoForSelfSync(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION);
+      const tokenId = bundleInfo.appInfo.accessTokenId;
+
+      // 同步检查权限状态
+      const grantStatus = await abilityAccessCtrl.createAtManager().checkAccessToken(tokenId, 'ohos.permission.DISTRIBUTED_DATASYNC');
+      return grantStatus === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED;
+    } catch (err) {
+      console.error(`权限检查失败: ${JSON.stringify(err)}`);
+      return false;
+    }
+  }
+  async requestDistributedSyncPermission(): Promise<boolean>{
+    // 动态申请权限
+    console.log('进入申请')
+    const context = getContext(this) as common.UIAbilityContext;
+    const atManager = abilityAccessCtrl.createAtManager();
+
+    try {
+      atManager.requestPermissionsFromUser(context, ['ohos.permission.DISTRIBUTED_DATASYNC']).then(async (data) => {
+        console.log('data: ' + JSON.stringify(data));
+        if (data.authResults[0] === 0) {
+          return true
+        }else {
+          // 用户拒绝，跳转系统设置
+          await atManager.requestPermissionOnSetting(context, ['ohos.permission.DISTRIBUTED_DATASYNC']);
+          return await this.checkPermission(); // 再次校验设置后的状态
+        }
+      }).catch((err: object) => {
+        console.log('err: ' + JSON.stringify(err));
+      })
+    } catch (err) {
+      console.log('catch err->' + JSON.stringify(err));
+    }
+    return false
   }
 
 }
