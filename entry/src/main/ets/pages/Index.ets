@@ -1,8 +1,10 @@
 import * as Interfaces from '.././interface';
-import { dbUtil } from '../../../common/Index'
+import { dbUtil } from '../common/Index'
 import { config } from '../config';
-import { CustomContentDialog } from '@kit.ArkUI';
+import { CustomContentDialog,promptAction } from '@kit.ArkUI';
 import { MessageHistory } from '../data_class'
+import { common } from '@kit.AbilityKit';
+
 @Entry
 @Component
 struct Index {
@@ -11,6 +13,12 @@ struct Index {
   @State messageList: Array<MessageHistory> = [];
   @State userID:number | null = null;
   @State hideTitle:boolean = false;
+  // 记录第一次点击返回键的时间戳
+  private firstBackTime: number = 0;
+  // 两次点击的时间间隔阈值（单位：毫秒）
+  private readonly EXIT_DURATION: number = 2000;
+  // 获取Ability上下文（用于退出应用）
+  private abilityContext = getContext(this) as common.UIAbilityContext;
   changeItem: number = 0;
   private listScroller: ListScroller = new ListScroller();
   currItemName:string = ''
@@ -127,8 +135,14 @@ struct Index {
       name:"TalkPage"
     },
     {
+      text:$r('app.string.My_Device'),
+      prompt:$r('app.string.My_Device_prompt'),
+      icon:$r('app.media.doc_plaintext_and_pencil_talk'),
+      name:"DevicePage"
+    },
+    {
       text:$r('app.string.My_About'),
-      prompt:$r('app.string.My_About_prompt'),
+      // prompt:$r('app.string.My_About_prompt'),
       icon:$r('app.media.about'),
       name:"AboutPage"
     },
@@ -242,6 +256,25 @@ struct Index {
   aboutToAppear(): void {
     this.messageList = config.messageList;
   }
+  // 拦截返回键事件
+  onBackPress(): boolean {
+    const currentTime = new Date().getTime();
+    if (currentTime - this.firstBackTime < this.EXIT_DURATION) {
+      // 第二次点击返回键：退出应用
+      this.abilityContext.terminateSelf().then(() => {
+        console.log('应用已退出');
+      });
+      return true; // 拦截返回键默认行为
+    } else {
+      // 第一次点击返回键：记录时间并提示
+      this.firstBackTime = currentTime;
+      promptAction.showToast({
+        message: '再按一次返回键退出AITalk',
+        duration: this.EXIT_DURATION
+      })
+      return true; // 拦截返回键默认行为
+    }
+  }
 
   build() {
     Navigation(this.pageInfos){
@@ -258,7 +291,7 @@ struct Index {
     .titleMode(NavigationTitleMode.Mini)
     .hideBackButton(true)
     .title($r('app.string.Index_Title'))
-    .menus(this.TooTmp)
+    // .menus(this.TooTmp)
     .toolbarConfiguration(this.TooBar)
     .hideTitleBar(this.hideTitle)
   }
