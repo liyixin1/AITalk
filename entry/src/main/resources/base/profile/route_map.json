@@ -9,14 +9,6 @@
       }
     },
     {
-      "name": "LoginPage",
-      "pageSourceFile": "src/main/ets/pages/login_page.ets",
-      "buildFunction": "LoginBuilder",
-      "data": {
-        "description" : "this is LoginPage"
-      }
-    },
-    {
       "name": "ModelPage",
       "pageSourceFile": "src/main/ets/pages/set_pages/model_page.ets",
       "buildFunction": "ModelBuilder",
