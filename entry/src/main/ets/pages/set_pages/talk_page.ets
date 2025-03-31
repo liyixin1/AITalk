@@ -4,11 +4,13 @@ import { config } from "../../config"
 export function TalkBuilder() {
   TalkPage()
 }
+@Entry
 @Component
 struct TalkPage{
   pathStack: NavPathStack | null = null
   @State chatPrompt:string = config.ai.chatPrompt
   @State autoTitle:boolean = true
+  @State autoSync:boolean = false
   @State button_apply:boolean = false
   build() {
     NavDestination() {
@@ -40,6 +42,23 @@ struct TalkPage{
             })
           Text($r('app.string.Talk_Auto_Title'))
         }
+        Row({space:4}){
+          Toggle({ type: ToggleType.Switch, isOn: this.autoSync })
+            .onChange(async (isOn: boolean)=>{
+              if (isOn){
+                const hasPermission = await config.checkPermission(); // 预检查权限状态
+                if (!hasPermission) {
+                  const isGranted = await config.requestDistributedSyncPermission();
+                  this.autoSync = isGranted; // 根据最终授权结果设置状态
+                } else {
+                  this.autoSync = true; // 已有权限直接生效
+                }
+              } else {
+                this.autoSync = false; // 关闭开关无需处理权限
+              }
+            })
+          Text($r('app.string.Talk_Auto_Title'))
+        }
         Blank()
         Row({space:24}){
           Button($r('app.string.Button_Cancel'),{buttonStyle:ButtonStyleMode.TEXTUAL})
@@ -50,6 +69,7 @@ struct TalkPage{
             .enabled(this.button_apply)
             .onClick(()=>{
               config.upDateChatPrompt(this.chatPrompt,this.autoTitle);
+              this.pathStack?.pop();
             })
         }.width('100%')
         .alignSelf(ItemAlign.End)

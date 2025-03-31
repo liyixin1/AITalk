@@ -1,15 +1,12 @@
 import { config } from "../../config"
 import { i18n } from "@kit.LocalizationKit"
 import { BusinessError } from "@kit.BasicServicesKit"
-import { atomicService } from '@kit.ScenarioFusionKit';
-import { ConfigurationConstant } from "@kit.AbilityKit";
-import { window } from "@kit.ArkUI";
 
 @Builder
 export function DisPlayBuilder() {
   DisPlayPage()
 }
-@Preview
+@Entry
 @Component
 struct DisPlayPage{
   pathStack: NavPathStack | null = null
@@ -78,13 +75,12 @@ struct DisPlayPage{
           Text($r('app.string.Display_Theme'))
           Select([{value:$r('app.string.Display_Theme_Dark')},{value:$r('app.string.Display_Theme_Light')},{value:$r('app.string.Display_Theme_Auto')}])
             .width('100%')
-            .selected($$this.currTheme)
-            .value($$this.currThemeText)
+            .selected(this.currTheme)
+            .value(this.currThemeText)
             .borderRadius(8)
-            .onSelect(()=>{
-            // .onSelect((index:number,text:string)=>{
-              // this.currTheme = index;
-              // this.currThemeText = text;
+            .onSelect((index:number,text:string)=>{
+              this.currTheme = index;
+              this.currThemeText = text;
               this.themeIsChang = true;
             })
         }.width('100%')

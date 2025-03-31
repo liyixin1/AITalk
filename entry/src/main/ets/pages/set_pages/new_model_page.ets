@@ -6,7 +6,7 @@ export function NewModelBuilder() {
   NewModelPage()
 }
 
-@Preview
+@Entry
 @Component
 struct NewModelPage{
   pathStack: NavPathStack | null = null

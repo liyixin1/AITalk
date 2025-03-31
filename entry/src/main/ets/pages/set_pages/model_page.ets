@@ -1,13 +1,13 @@
 import { config } from '../../config'
 import { aiModel } from '../../ai_model'
-import { preferenceUtil } from '../../../../common/utils/preferences_util'
+import { preferenceUtil } from '../../common/Index'
 import * as Interfaces from '../../interface';
 @Builder
 export function ModelBuilder() {
   ModelPage()
 }
 
-@Preview
+@Entry
 @Component
 struct ModelPage{
   pathStack: NavPathStack | null = null
