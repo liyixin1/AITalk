@@ -1,6 +1,5 @@
 import { router } from '@kit.ArkUI';
 import { config } from '../config';
-
 @Entry
 @Component
 struct StartPage {
@@ -28,7 +27,7 @@ struct StartPage {
         duration: 1500,
         onFinish:()=>{
           if (config.isConfigReady) {
-            router.pushUrl({
+            router.replaceUrl({
               url: 'pages/Index'
             })
           }
@@ -36,8 +35,10 @@ struct StartPage {
       })
       Blank()
       Blank()
-      Image($r('app.media.AITalk'))
-        .width(100)
+      Image($r('app.media.app_icon'))
+        .width(64)
+        .backgroundColor('#00000000')
+        .margin({bottom:'10%'})
     }
     .width('100%')
     .height('100%')
