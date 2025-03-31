@@ -4,13 +4,13 @@ import { config } from '../config'
 import { aiModel } from '../ai_model'
 import { lvMarkdownIn, lvText } from "@luvi/lv-markdown-in"
 import { inputMethod } from '@kit.IMEKit';
-import { dbUtil } from '../../../common/utils/db_util';
+import { dbUtil } from '../common/utils/db_util';
 import { fileIo } from '@kit.CoreFileKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import image from '@ohos.multimedia.image';
 import { buffer } from '@kit.ArkTS';
-import { myStreamRequest } from '../../../common/utils/http_util'
-
+import { myStreamRequest } from '../common/utils/http_util'
+import { audio } from '../audio'
 @Builder
 export function ListItemBuilder() {
   ListItemPage()
@@ -24,7 +24,7 @@ interface GeneratedObjectLiteralInterface_1 {
   TYPING_INTERVAL: number;
 }
 
-@Preview
+@Entry
 @Component
 struct ListItemPage {
   pathStack: NavPathStack | null = null
@@ -39,6 +39,8 @@ struct ListItemPage {
   @State arrtext: string[] = [];
   @State timer: number = 0;
   @State index:number = 0
+  @State isVoiceInput:boolean = false
+  occurredError:boolean = false
   scroller: Scroller = new Scroller()
   // 流式调用
   private streamRequest: myStreamRequest = new myStreamRequest();
@@ -61,11 +63,134 @@ struct ListItemPage {
       this.chatRecord[0].role = 'developer';
     }
     this.setupEventListeners();
+    this.setaudioback()
     this.TokenUsage.push('0');
     lvText.setTextSize(config.display.fontsize)
   }
   aboutToDisappear(): void {
     this.streamRequest.destroy()
+  }
+  build() {
+    NavDestination() {
+      Scroll(this.scroller){
+        Flex({direction:FlexDirection.Column,alignItems:ItemAlign.Center}){
+          List({ space: 10 }) {
+            ForEach(this.chatRecord, (chat: Interfaces.Messages, index) => {
+              this.messageItem(chat, index)
+            })
+          }.flexGrow(1).width('100%')
+          Row({space:4}){
+            ForEach(this.chatImage, (item: image.PixelMap, index) => {
+              Image(item)
+                .height(64)
+                .width(64)
+                .borderRadius(8)
+                .borderWidth(1)
+                .borderColor($r('sys.color.font_fourth') )
+                .objectFit(ImageFit.Contain)
+                .onClick(() => {
+                  this.chatImage.splice(index, 1);
+                  this.ImageUrl.splice(index, 1);
+                })
+            }, (item: string) => item)
+          }.width('100%')
+          .margin(4)
+          .justifyContent(FlexAlign.Start)
+          .constraintSize({ minHeight:0, maxHeight: 64 })
+          Divider()
+            .width('100%')
+            .alignSelf(ItemAlign.End)
+          Row(){
+            Button({ type: ButtonType.Circle }) {
+              Image($r('app.media.picture'))
+                .fillColor($r('sys.color.icon_primary'))
+                .onClick(() => this.handleImageSelect())
+            }
+            .width(28)
+            .height(28)
+            .margin(5)
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            Button({ type: ButtonType.Circle }) {
+              Image(this.isVoiceInput?$r('app.media.keyboard'):$r('app.media.audio'))
+                .fillColor($r('sys.color.icon_primary'))
+                .onClick(() => {
+                  this.isVoiceInput = !this.isVoiceInput
+                })
+            }
+            .width(28)
+            .height(28)
+            .margin(5)
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+
+            Blank()
+            Button($r('app.string.ListItem_send'), { type: ButtonType.Normal, stateEffect: true })
+              .enabled(this.buttonDisabled)
+              .width(64)
+              .height(28)
+              .buttonStyle(ButtonStyleMode.EMPHASIZED)
+              .borderRadius(4)
+              .margin(5)
+              .alignSelf(ItemAlign.End)
+              .onClick(async () => {
+                inputMethod.getController().stopInputSession();
+                await this.sendMessage();
+              })
+          }.width('100%').justifyContent(FlexAlign.Start)
+          if (this.isVoiceInput){
+            Button($r('app.string.Button_Audio'),{ type: ButtonType.Normal, stateEffect: true })
+              .width('95%')
+              .margin(5)
+              .borderRadius(8)
+              .onTouch(async (event?: TouchEvent) =>{
+                if (event?.type === TouchType.Down) {
+                  audio.startListeningForRecording()
+                }
+                if (event?.type === TouchType.Up) {
+                  audio.asrEngine?.finish('1')
+                  console.log('end')
+                  await this.sendMessage();
+                }
+              })
+          }else{
+            TextArea({ text: $$this.userInput })
+              .type(TextAreaType.NORMAL)
+              .width('95%')
+              .margin(5)
+              .borderRadius(8)
+              .constraintSize({ maxHeight: "40%" })
+          }
+
+        }.width('100%').height('100%')
+        .backgroundColor($r('sys.color.background_primary'))
+      }
+    }
+    .title(this.itemName)
+    .mode(NavDestinationMode.STANDARD)
+    .onReady(async (context: NavDestinationContext) => {
+      this.pathStack = context.pathStack;
+      this.itemName = (this.pathStack.getParamByName('ListItemPage')[0] as Interfaces.MessageHistory).name;
+      this.currId = (this.pathStack.getParamByName('ListItemPage')[0] as Interfaces.MessageHistory).id;
+      const tableName = `record${this.currId}`;
+      const columns = ['SENDER', 'MESSAGE', 'TOKENUSAGE'];
+      const chatData = await dbUtil.queryRecordDataById(columns, tableName);
+      if (chatData && chatData.length > 0) {
+        for (const value of chatData) {
+          this.chatRecord.push({ role: value.role, content: value.content });
+          this.TokenUsage.push(value.token)
+          console.log(value.token)
+        }
+      }
+    })
+    .onBackPressed(() => {
+      let param: Interfaces.ListParam;
+      if (this.chatRecord.length < 2) {
+        param = { name: "" };
+      } else {
+        param = { name: this.itemName };
+      }
+      this.pathStack?.pop(param);
+      return true;
+    })
   }
   // 设置事件监听器
   private setupEventListeners() {
@@ -107,6 +232,12 @@ struct ListItemPage {
     });
     // 监听数据结束事件
     this.streamRequest.on('dataEnd', () => {
+      if (this.occurredError) {
+        this.chatRecord.pop();
+        this.chatRecord.pop();
+        this.occurredError = false
+        return
+      }
       console.log('dataEnd---')
       this.isLoading = false;
       aiModel.saveToDatabase(
@@ -127,6 +258,7 @@ struct ListItemPage {
   // 发送消息
   private async sendMessage(){
     if (!this.userInput.trim()) {
+      console.log('无输入')
       return;
     }
     try {
@@ -141,7 +273,31 @@ struct ListItemPage {
         '0'
       )
       this.TokenUsage.push('0');
-      await aiModel.getStreamReply(this.chatRecord,this.streamRequest);
+      const code:number = await aiModel.getStreamReply(this.chatRecord,this.streamRequest);
+      if (code >= 400){
+        this.occurredError = true
+        if (code === 401) {
+          AlertDialog.show({
+            message: "APIkey错误"
+          })
+        }else if(code === 402){
+          AlertDialog.show({
+            message: "账号余额不足"
+          })
+        }else if(code === 429){
+          AlertDialog.show({
+            message: "请求速率（TPM 或 RPM）达到上限"
+          })
+        }else if(code === 500){
+          AlertDialog.show({
+            message: "服务器内部故障或负载过高"
+          })
+        }else{
+          AlertDialog.show({
+            message: "未知错误，请稍后重试。"
+          })
+        }
+      }
     } catch (error) {
       console.error('错误：', JSON.stringify(error))
     }finally {
@@ -149,97 +305,11 @@ struct ListItemPage {
     }
 
   }
-
-  build() {
-    NavDestination() {
-      Scroll(this.scroller){
-        Flex({direction:FlexDirection.Column,alignItems:ItemAlign.Center}){
-          List({ space: 10 }) {
-              ForEach(this.chatRecord, (chat: Interfaces.Messages, index) => {
-                this.messageItem(chat, index)
-              })
-          }.flexGrow(1).width('100%')
-          Row({space:4}){
-            ForEach(this.chatImage, (item: image.PixelMap, index) => {
-              Image(item)
-                .height(64)
-                .width(64)
-                .borderRadius(8)
-                .borderWidth(1)
-                .borderColor($r('sys.color.font_fourth') )
-                .objectFit(ImageFit.Contain)
-                .onClick(() => {
-                  this.chatImage.splice(index, 1);
-                  this.ImageUrl.splice(index, 1);
-                })
-            }, (item: string) => item)
-          }.width('100%')
-          .margin(4)
-          .justifyContent(FlexAlign.Start)
-          .constraintSize({ minHeight:0, maxHeight: 64 })
-          Divider()
-            .width('100%')
-            .alignSelf(ItemAlign.End)
-          Row(){
-            Button({ type: ButtonType.Circle }) {
-              Image($r('app.media.picture'))
-                .fillColor($r('sys.color.icon_primary'))
-                .onClick(() => this.handleImageSelect())
-            }
-            .width(28)
-            .height(28)
-            .margin(5)
-            .buttonStyle(ButtonStyleMode.TEXTUAL)
-            Blank()
-            Button($r('app.string.ListItem_send'), { type: ButtonType.Normal, stateEffect: true })
-              .enabled(this.buttonDisabled)
-              .width(64)
-              .height(28)
-              .buttonStyle(ButtonStyleMode.EMPHASIZED)
-              .borderRadius(4)
-              .margin(5)
-              .alignSelf(ItemAlign.End)
-              .onClick(async () => {
-                inputMethod.getController().stopInputSession();
-                await this.sendMessage();
-              })
-          }.width('100%').justifyContent(FlexAlign.Start)
-          TextArea({ text: $$this.userInput })
-            .type(TextAreaType.NORMAL)
-            .width('95%')
-            .margin(5)
-            .borderRadius(8)
-            .constraintSize({ maxHeight: "40%" })
-        }.width('100%').height('100%')
-        .backgroundColor($r('sys.color.background_primary'))
-      }
-    }
-    .title(this.itemName)
-    .mode(NavDestinationMode.STANDARD)
-    .onReady(async (context: NavDestinationContext) => {
-      this.pathStack = context.pathStack;
-      this.itemName = (this.pathStack.getParamByName('ListItemPage')[0] as Interfaces.MessageHistory).name;
-      this.currId = (this.pathStack.getParamByName('ListItemPage')[0] as Interfaces.MessageHistory).id;
-      const tableName = `record${this.currId}`;
-      const columns = ['SENDER', 'MESSAGE', 'TOKENUSAGE'];
-      const chatData = await dbUtil.queryRecordDataById(columns, tableName);
-      if (chatData && chatData.length > 0) {
-        for (const value of chatData) {
-          this.chatRecord.push({ role: value.role, content: value.content });
-          this.TokenUsage.push(value.token)
-          console.log(value.token)
-        }
-      }
-    })
-    .onBackPressed(() => {
-      let param: Interfaces.ListParam;
-      if (this.chatRecord.length < 2) {
-        param = { name: "" };
-      } else {
-        param = { name: this.itemName };
-      }
-      this.pathStack?.pop(param);
-      return true;
+  //设置语音识别回调
+  setaudioback(){
+    audio.on('Result',(data:string)=>{
+      console.log('startWriteToInput')
+      this.userInput = data + '1';
     })
   }
 

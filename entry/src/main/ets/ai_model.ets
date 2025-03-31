@@ -1,8 +1,8 @@
 import { config } from './config'
 import * as Interfaces from './interface';
-import { dbUtil, myRequest } from '../../common/Index'
+import { dbUtil, myRequest } from './common/Index'
 import { http } from '@kit.NetworkKit';
-import { myStreamRequest } from '../../common/utils/http_util';
+import { myStreamRequest } from './common/utils/http_util';
 import * as responseInterface from './responseInterface'
 import { ListMessages,ContentItem,ContentItemImage } from './data_class';
 
@@ -44,9 +44,11 @@ class AIModel{
     chatRecord = this.limitChatRounds(chatRecord);
     let body = this.toHttpBody2(chatRecord)
     try {
-      await streamRequest.fetchStreamRequest<Interfaces.RequestBody>(this.url,this.headers,body)
+      const code = await streamRequest.fetchStreamRequest<Interfaces.RequestBody>(this.url,this.headers,body)
+      return code
     }catch (error) {
       console.error('发送消息失败:', JSON.stringify(error));
+      return error.code
     }
   }
 
