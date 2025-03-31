@@ -1,8 +1,8 @@
-import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
+import { abilityAccessCtrl, AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window,KeyboardAvoidMode  } from '@kit.ArkUI';
-import { preferenceUtil } from '../../../common/Index';
-import { dbUtil }  from '../../../common/Index'
+import { preferenceUtil } from '../common/Index';
+import { dbUtil }  from '../common/Index'
 import { config } from '../config';
 
 export default class EntryAbility extends UIAbility {
@@ -22,10 +22,11 @@ export default class EntryAbility extends UIAbility {
     preferenceUtil.insertData('isLoggedIn',false);
     // 初始化数据库
     dbUtil.initDB(this.context,'users');
-
-    setTimeout(async ()=>{
-      await config.initConfig();
+    // 初始化全局配置
+    setTimeout(()=>{
+      config.initConfig();
     },500)
+    // 设置主题
     this.context.getApplicationContext().setColorMode(config.display.theme)
     windowStage.loadContent('pages/Index', (err, data) => {
       let keyboardAvoidMode = windowStage.getMainWindowSync().getUIContext().getKeyboardAvoidMode();
@@ -38,7 +39,6 @@ export default class EntryAbility extends UIAbility {
     });
     // Main window is created, set main page for this ability
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
-
     windowStage.loadContent('pages/start_page', (err) => {
       if (err.code) {
         hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');

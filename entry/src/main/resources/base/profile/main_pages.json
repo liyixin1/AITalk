@@ -1,6 +1,11 @@
 {
   "src": [
     "pages/Index",
-    "pages/start_page"
+    "pages/start_page",
+    "pages/set_pages/model_page",
+    "pages/set_pages/new_model_page",
+    "pages/set_pages/display_page",
+    "pages/set_pages/talk_page",
+    "pages/set_pages/device"
   ]
 }

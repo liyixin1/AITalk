@@ -101,7 +101,7 @@ export interface Provider{
 // 我的界面列表项
 export interface setListItem{
   text:Resource,
-  prompt:Resource,
+  prompt?:Resource,
   icon:ResourceStr | null,
   name:string
 }

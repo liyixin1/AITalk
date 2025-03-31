@@ -47,6 +47,14 @@
       "data": {
         "description" : "this is NewModelPage"
       }
+    },
+    {
+      "name": "DevicePage",
+      "pageSourceFile": "src/main/ets/pages/set_pages/device.ets",
+      "buildFunction": "DeviceBuilder",
+      "data": {
+        "description" : "this is DevicePage"
+      }
     }
   ]
 }

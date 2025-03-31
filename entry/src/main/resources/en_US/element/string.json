@@ -183,6 +183,22 @@
     {
       "name": "New_Chat",
       "value": "New Chat"
+    },
+    {
+      "name": "Button_Audio",
+      "value": "Hold to Talk"
+    },
+    {
+      "name": "distributed_permission",
+      "value": "Apply for distributed data synchronization permission to synchronize data to the bound devices."
+    },
+    {
+      "name": "My_Device",
+      "value": "Device"
+    },
+    {
+      "name": "My_Device_prompt",
+      "value": "view distributed devices"
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { dbUtil } from '../../../../common/Index'
+import { dbUtil } from '../../common/Index'
 import * as Interfaces from '../../interface'
 import { PromptActionClass } from './PromptActionClass'
 
