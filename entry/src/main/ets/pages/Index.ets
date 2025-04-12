@@ -4,13 +4,14 @@ import { config } from '../config';
 import { CustomContentDialog,promptAction } from '@kit.ArkUI';
 import { MessageHistory } from '../data_class'
 import { common } from '@kit.AbilityKit';
-
+import { MessageDataSource } from '../data_class'
 @Entry
 @Component
 struct Index {
   @Provide('pageInfos') pageInfos: NavPathStack = new NavPathStack()
   @State currentIndex: number = 0;
-  @State messageList: Array<MessageHistory> = [];
+  // @State messageList: Array<MessageHistory> = [];
+  @State messageDataSource: MessageDataSource = new MessageDataSource();
   @State userID:number | null = null;
   @State hideTitle:boolean = false;
   // 记录第一次点击返回键的时间戳
@@ -42,8 +43,7 @@ struct Index {
           buttonStyle: ButtonStyleMode.TEXTUAL,
           role: ButtonRole.ERROR,
           action: () => {
-            this.messageList[this.changeItem].name = this.currItemName
-            console.log(this.messageList[this.changeItem].name)
+            this.messageDataSource.upData(this.changeItem,this.currItemName);
             dbUtil.upDataById("myList",this.currItemId,{NAME:this.currItemName});
             console.info('Callback when the button is clicked')
             this.dialogController.close()
@@ -71,14 +71,15 @@ struct Index {
         let id = await dbUtil.insertDataR('myList',{NAME:"新对话",CREEATE_TIME:date});
         dbUtil.createRecordTable(`record${id.toString()}`);
         if(id > 0){
-          this.messageList.unshift(new MessageHistory(id,config.display.language === "简体中文"?"新对话":"New Chat",date))
+          const temp = new MessageHistory(id,config.display.language === "简体中文"?"新对话":"New Chat",date)
+          this.messageDataSource.pushData(temp)
           this.currentIndex = 3;
-          this.pageInfos.pushPathByName("ListItemPage",this.messageList[0],(popInfo) => {
+          this.pageInfos.pushPathByName("ListItemPage",temp,(popInfo) => {
             if((popInfo.result as Interfaces.ListParam).name !== ""){
-              this.messageList[0].name = (popInfo.result as Interfaces.ListParam).name;
+              this.messageDataSource.upData(0,(popInfo.result as Interfaces.ListParam).name);
               dbUtil.upDataById("myList",id,{NAME:(popInfo.result as Interfaces.ListParam).name});
             }else{
-              this.messageList.shift();
+              this.messageDataSource.deleteData(0);
               dbUtil.deleteById("myList",id);
               dbUtil.deleteRecordTable(`record${id.toString()}`);
             }
@@ -149,36 +150,39 @@ struct Index {
   ]
 
   onEditClick(index:number):void{
-    this.currItemName = this.messageList[index].name
-    this.currItemId = this.messageList[index].id
+    const temp = this.messageDataSource.getData(index);
+    this.currItemName = temp.name
+    this.currItemId = temp.id
     this.changeItem = index
     this.dialogController.open()
     this.listScroller.closeAllSwipeActions()
   }
   onDeleteClick(index:number):void{
-    const id = this.messageList[index].id;
+    const temp = this.messageDataSource.getData(index);
+    const id = temp.id;
     this.listScroller.closeAllSwipeActions()
     dbUtil.deleteSyncById("myList",id);
     console.log(`Deleted item at index: ${index}`);
-    this.messageList.splice(index,1);
+    this.messageDataSource.deleteData(index);
   }
   onPush(index:number):void{
-    console.log(`index:${JSON.stringify(this.messageList[index])}`);
-    this.pageInfos.pushPathByName("ListItemPage", this.messageList[index])
+    const temp = this.messageDataSource.getData(index);
+    console.log(`index:${JSON.stringify(temp)}`);
+    this.pageInfos.pushPathByName("ListItemPage", temp)
   }
 
   @Builder messages() {
     // 消息页面
     List({ space: 10,scroller:this.listScroller}){
-      ForEach(this.messageList,(item:MessageHistory,index:number)=>{
-        LListItem({
-          item:item,
-          onPush: () => this.onPush(index),
-          onEditClick: () => this.onEditClick(index),
-          onDeleteClick:() => this.onDeleteClick(index)
-        })
-      }, (item: MessageHistory) => item.id.toString())
-    }
+        LazyForEach(this.messageDataSource,(item:MessageHistory,index:number) => {
+            LListItem({
+              item:item,
+              onPush: () => this.onPush(index),
+              onEditClick: () => this.onEditClick(index),
+              onDeleteClick:() => this.onDeleteClick(index)
+            })
+        }, (item: MessageHistory) => item.id.toString())
+    }.cachedCount(10)
     .width('100%')
     .height('100%')
     .padding(10)
@@ -254,7 +258,9 @@ struct Index {
 
 
   aboutToAppear(): void {
-    this.messageList = config.messageList;
+    for (let i = 0; i < config.messageList.length; i++) {
+      this.messageDataSource.pushData(config.messageList[i])
+    }
   }
   // 拦截返回键事件
   onBackPress(): boolean {
